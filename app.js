@@ -1,9 +1,12 @@
+require('dotenv').config()
+
 const express = require('express')
 const app = express()
 const dal = require('./dal.js')
 const port = process.env.PORT || 4000
 const HTTPError = require('node-http-error')
 const bodyParser = require('body-parser')
+const { pathOr } = require('ramda')
 
 app.use(bodyParser.json())
 
@@ -31,7 +34,7 @@ app.post('/cats', function(req, res, next) {
 //   READ -    GET /cats/:id
 
 app.get('/cats/:id', function(req, res, next) {
-  dal.getCat(Number(req.params.id), function(err, data) {
+  dal.getCat(req.params.id, function(err, data) {
     if (err) return next(new HTTPError(err.status, err.message, err))
 
     if (data) {
@@ -46,9 +49,13 @@ app.get('/cats/:id', function(req, res, next) {
 //get data, find cats/:id, replace with new data
 app.put('/cats/:id', function(req, res, next) {
   const catId = req.params.id
-  console.log('cat id', catId)
+  const requestBody = pathOr('no body', ['body'], req)
 
-  dal.updateCat(Number(catId), req.body, function(err, data) {
+  if (catId != requestBody._id) {
+    return next(new HTTPError(400, 'Bad Request'))
+  }
+
+  dal.updateCat(requestBody, function(err, data) {
     if (err) return next(new HTTPError(err.status, err.message, err))
     res.status(200).send(data)
   })

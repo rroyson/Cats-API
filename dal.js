@@ -1,3 +1,12 @@
+const PouchDB = require('pouchdb-http')
+
+const db = new PouchDB(
+  'https://civamitzentsofuedoonahic:cd7b633f29685c0d2145a7b2f3602857c8b41329@ad242826-b19a-46a8-8704-0c1f69fe15e0-bluemix.cloudant.com/test'
+)
+console.log('process.env.COUCHDB_NAME:', process.env.COUCHDB_NAME)
+console.log('process.env.COUCHDB_SERVER:', process.env.COUCHDB_SERVER)
+// console.log('database', db)
+
 var catsData = [
   {
     id: 2,
@@ -29,14 +38,20 @@ function listCats(callback) {
 }
 
 function getCat(catId, callback) {
-  const foundCat = find(cat => cat.id === catId, catsData)
-  callback(null, foundCat)
+  // const foundCat = find(cat => cat.id === catId, catsData)
+  // callback(null, foundCat)
+  db.get(catId, function(err, doc) {
+    if (err) callback(err)
+    callback(null, doc)
+  })
 }
 
-function updateCat(id, cat, callback) {
-  catsData = compose(append(cat), reject(c => c.id === id))(catsData)
-
-  callback(null, cat)
+function updateCat(cat, callback) {
+  // catsData = compose(append(cat), reject(c => c.id === id))(catsData)
+  db.put(cat, function(err, doc) {
+    if (err) callback(err)
+    callback(null, doc)
+  })
 }
 
 function deleteCat(id, callback) {
