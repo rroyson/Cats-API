@@ -33,8 +33,61 @@ var catsData = [
 
 const { append, find, map, reject, compose } = require('ramda')
 
-function listCats(callback) {
-  callback(null, catsData)
+// function listCats(callback) {
+//   db.allDocs(
+//     {
+//       include_docs: true,
+//       attachments: true,
+//       startkey: 'cat_',
+//       endkey: 'cat_\uffff'
+//     },
+//     function(err, cats) {
+//       if (err) callback(err)
+//
+//       callback(null, map(row => row.doc, cats.rows))
+//     }
+//   )
+// }
+
+function listBreeds(limit, callback) {
+  const options = limit
+    ? {
+        include_docs: true,
+        startkey: 'cat_',
+        endkey: 'cat_\uffff',
+        limit
+      }
+    : {
+        include_docs: true,
+        startkey: 'cat_',
+        endkey: 'cat_\uffff'
+      }
+
+  list(options, callback)
+}
+
+function listCats(limit, callback) {
+  const options = limit
+    ? {
+        include_docs: true,
+        startkey: 'cat_',
+        endkey: 'cat_\uffff',
+        limit
+      }
+    : {
+        include_docs: true,
+        startkey: 'cat_',
+        endkey: 'cat_\uffff'
+      }
+
+  list(options, callback)
+}
+
+function list(options, callback) {
+  db.allDocs(options, function(err, cats) {
+    if (err) callback(err)
+    callback(null, map(row => row.doc, cats.rows))
+  })
 }
 
 function getCat(catId, callback) {
@@ -54,10 +107,18 @@ function updateCat(cat, callback) {
   })
 }
 
-function deleteCat(id, callback) {
-  catsData = reject(c => c.id === id, catsData)
-
-  callback(null, { deleted: true })
+function deleteCat(catId, callback) {
+  db
+    .get(catId)
+    .then(function(doc) {
+      return db.remove(doc)
+    })
+    .then(function(result) {
+      callback(null, result)
+    })
+    .catch(function(err) {
+      callbakc(err)
+    })
 }
 
 function addCat(cat, callback) {
@@ -70,7 +131,8 @@ const dal = {
   listCats,
   getCat,
   updateCat,
-  deleteCat
+  deleteCat,
+  listBreeds
 }
 
 module.exports = dal

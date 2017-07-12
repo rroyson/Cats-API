@@ -66,17 +66,26 @@ app.put('/cats/:id', function(req, res, next) {
 app.delete('/cats/:id', function(req, res, next) {
   const catId = req.params.id
 
-  dal.deleteCat(Number(catId), function(err, data) {
-    console.log('data', JSON.stringify(data, null, 2))
+  dal.deleteCat(catId, function(err, data) {
+    // console.log('data', JSON.stringify(data, null, 2))
     if (err) return next(new HTTPError(err.status, err.message, err))
     res.status(200).send(data)
   })
 })
 
-//   LIST   -  GET /cats
+//   LIST   -  GET /cats, GET /breeds
 
 app.get('/cats', function(req, res, next) {
-  dal.listCats(function(err, data) {
+  const limit = pathOr(null, ['query', 'limit'], req)
+  dal.listCats(limit, function(err, data) {
+    if (err) return next(new HTTPError(err.status, err.message, err))
+    res.status(200).send(data)
+  })
+})
+
+app.get('/breeds', function(req, res, next) {
+  const limit = pathOr(null, ['query', 'limit'], req)
+  dal.listBreeds(limit, function(err, data) {
     if (err) return next(new HTTPError(err.status, err.message, err))
     res.status(200).send(data)
   })
