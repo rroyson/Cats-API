@@ -1,69 +1,22 @@
 const PouchDB = require('pouchdb-http')
+const { map } = require('ramda')
+const db = new PouchDB(process.env.COUCHDB_URL + process.env.COUCHDB_NAME)
+const pkGenerator = require('./lib/build-pk')
 
-const db = new PouchDB(
-  'https://civamitzentsofuedoonahic:cd7b633f29685c0d2145a7b2f3602857c8b41329@ad242826-b19a-46a8-8704-0c1f69fe15e0-bluemix.cloudant.com/test'
-)
-console.log('process.env.COUCHDB_NAME:', process.env.COUCHDB_NAME)
-console.log('process.env.COUCHDB_SERVER:', process.env.COUCHDB_SERVER)
-// console.log('database', db)
+console.log('process.env.COUCHDB_NAME: ', process.env.COUCHDB_NAME)
 
-var catsData = [
-  {
-    id: 2,
-    type: 'cat',
-    breed: 'Siamese',
-    desc:
-      'The Siamese cat is one of the first distinctly recognized breeds of Asian cat. Derived from the rtgs: wichianmat landrace, one of several varieties of cat native to Thailand.'
-  },
-  {
-    id: 3,
-    type: 'cat',
-    breed: 'Maine Coon',
-    desc:
-      'The Maine Coon is the largest domesticated breed of cat. It has a distinctive physical appearance and valuable hunting skills.'
-  },
-  {
-    id: 4,
-    type: 'cat',
-    breed: 'Pixie-bob',
-    desc:
-      'The Pixie-bob is a breed of domestic cat claimed by breed founder Carol Ann Brewer of Washington State to be the progeny of naturally occurring bobcat hybrids.'
-  }
-]
+const { append, find, reject, compose, trim } = require('ramda')
 
-const { append, find, map, reject, compose } = require('ramda')
+function addCat(cat, callback) {
+  cat._id = pkGenerator('cat_', trim(cat.type))
+  add(cat, callback)
+}
 
-// function listCats(callback) {
-//   db.allDocs(
-//     {
-//       include_docs: true,
-//       attachments: true,
-//       startkey: 'cat_',
-//       endkey: 'cat_\uffff'
-//     },
-//     function(err, cats) {
-//       if (err) callback(err)
-//
-//       callback(null, map(row => row.doc, cats.rows))
-//     }
-//   )
-// }
-
-function listBreeds(limit, callback) {
-  const options = limit
-    ? {
-        include_docs: true,
-        startkey: 'breed_',
-        endkey: 'breed_\uffff',
-        limit
-      }
-    : {
-        include_docs: true,
-        startkey: 'breed_',
-        endkey: 'breed_\uffff'
-      }
-
-  list(options, callback)
+function updateCat(updatedCat, callback) {
+  db.put(updatedCat, function(err, doc) {
+    if (err) callback(err)
+    callback(null, doc)
+  })
 }
 
 function listCats(limit, callback) {
@@ -72,7 +25,7 @@ function listCats(limit, callback) {
         include_docs: true,
         startkey: 'cat_',
         endkey: 'cat_\uffff',
-        limit
+        limit: limit
       }
     : {
         include_docs: true,
@@ -84,44 +37,57 @@ function listCats(limit, callback) {
 }
 
 function getCat(catId, callback) {
-  // const foundCat = find(cat => cat.id === catId, catsData)
-  // callback(null, foundCat)
-  db.get(catId, function(err, doc) {
-    if (err) callback(err)
-    callback(null, doc)
-  })
-}
-
-function updateCat(cat, callback) {
-  // catsData = compose(append(cat), reject(c => c.id === id))(catsData)
-  db.put(cat, function(err, doc) {
-    if (err) callback(err)
-    callback(null, doc)
-  })
+  getDoc(catId, callback)
 }
 
 function deleteCat(catId, callback) {
-  db
-    .get(catId)
-    .then(function(doc) {
-      return db.remove(doc)
-    })
-    .then(function(result) {
-      callback(null, result)
-    })
-    .catch(function(err) {
-      callbakc(err)
-    })
+  deleteDoc(catId, callback)
 }
 
-function addCat(cat, callback) {
-  catsData = append(cat, catsData)
-  callback(null, cat)
+///////////////////////////
+// BREEDS
+//////////////////////////
+
+function addBreed(breed, callback) {
+  breed._id = pkGenerator('breed_', trim(breed.breed))
+  add(breed, callback)
 }
 
-///////////////////////////////////
-//// HELPER FUNCTION
+function getBreed(breedId, callback) {
+  getDoc(breedId, callback)
+}
 
+function updateBreed(updatedBreed, callback) {
+  db.put(updatedBreed, function(err, doc) {
+    if (err) callback(err)
+    callback(null, doc)
+  })
+}
+
+function deleteBreed(breedId, callback) {
+  deleteDoc(breedId, callback)
+}
+
+function listBreeds(limit, callback) {
+  const options = limit
+    ? {
+        include_docs: true,
+        startkey: 'breed_',
+        endkey: 'breed_\uffff',
+        limit: limit
+      }
+    : {
+        include_docs: true,
+        startkey: 'breed_',
+        endkey: 'breed_\uffff'
+      }
+
+  list(options, callback)
+}
+
+////////////////////////////
+//    helper functions
+////////////////////////////
 function list(options, callback) {
   db.allDocs(options, function(err, data) {
     if (err) callback(err)
@@ -129,13 +95,51 @@ function list(options, callback) {
   })
 }
 
+function add(doc, callback) {
+  db.put(doc, function(err, doc) {
+    if (err) callback(err)
+    callback(null, doc)
+  })
+}
+
+function getDoc(id, callback) {
+  db.get(id, function(err, doc) {
+    if (err) callback(err)
+    callback(null, doc)
+  })
+}
+
+function deleteDoc(id, callback) {
+  db
+    .get(id)
+    .then(function(doc) {
+      return db.remove(doc)
+    })
+    .then(function(result) {
+      callback(null, result)
+    })
+    .catch(function(err) {
+      callback(err)
+    })
+}
+
 const dal = {
   addCat,
   listCats,
   getCat,
-  updateCat,
   deleteCat,
-  listBreeds
+  updateCat,
+  getBreed,
+  listBreeds,
+  addBreed,
+  updateBreed,
+  deleteBreed
 }
 
 module.exports = dal
+
+// function deleteCat(id, callback) {
+//   catsData = reject(c => c.id === id, catsData)
+//
+//   callback(null, { deleted: true })
+// }
