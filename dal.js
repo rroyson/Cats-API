@@ -53,14 +53,14 @@ function listBreeds(limit, callback) {
   const options = limit
     ? {
         include_docs: true,
-        startkey: 'cat_',
-        endkey: 'cat_\uffff',
+        startkey: 'breed_',
+        endkey: 'breed_\uffff',
         limit
       }
     : {
         include_docs: true,
-        startkey: 'cat_',
-        endkey: 'cat_\uffff'
+        startkey: 'breed_',
+        endkey: 'breed_\uffff'
       }
 
   list(options, callback)
@@ -81,13 +81,6 @@ function listCats(limit, callback) {
       }
 
   list(options, callback)
-}
-
-function list(options, callback) {
-  db.allDocs(options, function(err, cats) {
-    if (err) callback(err)
-    callback(null, map(row => row.doc, cats.rows))
-  })
 }
 
 function getCat(catId, callback) {
@@ -124,6 +117,16 @@ function deleteCat(catId, callback) {
 function addCat(cat, callback) {
   catsData = append(cat, catsData)
   callback(null, cat)
+}
+
+///////////////////////////////////
+//// HELPER FUNCTION
+
+function list(options, callback) {
+  db.allDocs(options, function(err, data) {
+    if (err) callback(err)
+    callback(null, map(row => row.doc, data.rows))
+  })
 }
 
 const dal = {
